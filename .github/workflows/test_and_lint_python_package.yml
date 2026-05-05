@@ -39,6 +39,12 @@ on:
         type: boolean
         default: true
 
+      run-tests:
+        description: "Run pytest"
+        required: false
+        type: boolean
+        default: true
+
       additional-install-command:
         description: "Command to run before uv sync (e.g. installing PyTorch from CPU index)"
         required: false
@@ -90,5 +96,6 @@ jobs:
         run: uv run --frozen isort --check .
 
       - name: Test with pytest
+        if: ${{ inputs.run-tests }}
         run: uv run --frozen pytest
         env: ${{ fromJSON(inputs.test-env) }}
