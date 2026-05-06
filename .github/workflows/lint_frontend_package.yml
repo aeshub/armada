@@ -1,0 +1,132 @@
+name: Lint frontend package
+
+on:
+  workflow_call:
+    inputs:
+      node-versions:
+        description: "JSON list of node versions"
+        required: false
+        type: string
+        default: '["24.x"]'
+
+      working-directory:
+        description: "Path to the frontend project directory"
+        required: false
+        type: string
+        default: "."
+
+      run-prettier:
+        description: "Run prettier format check"
+        required: false
+        type: boolean
+        default: true
+
+      run-eslint:
+        description: "Run eslint linting"
+        required: false
+        type: boolean
+        default: true
+
+      run-build:
+        description: "Run npm build"
+        required: false
+        type: boolean
+        default: true
+
+      run-unused-exports:
+        description: "Run ts-unused-exports check"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  check_formatting:
+    if: ${{ inputs.run-prettier }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: ${{ fromJSON(inputs.node-versions) }}
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #v6
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e #v6
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+          cache-dependency-path: "**/package-lock.json"
+      - name: Install modules
+        run: npm ci
+      - name: Run Prettier
+        run: npm run prettier_check
+
+  run_eslint:
+    if: ${{ inputs.run-eslint }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: ${{ fromJSON(inputs.node-versions) }}
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #v6
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e #v6
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+          cache-dependency-path: "**/package-lock.json"
+      - name: Install modules
+        run: npm ci
+      - name: Run ESLint
+        run: npm run lint
+
+  build:
+    if: ${{ inputs.run-build }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: ${{ fromJSON(inputs.node-versions) }}
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #v6
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e #v6
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+          cache-dependency-path: "**/package-lock.json"
+      - name: Install modules
+        run: npm ci
+      - name: Build
+        run: npm run build
+
+  check_exports:
+    if: ${{ inputs.run-unused-exports }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: ${{ fromJSON(inputs.node-versions) }}
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #v6
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e #v6
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+          cache-dependency-path: "**/package-lock.json"
+      - name: Install modules
+        run: npm ci
+      - name: Run Unused Exports Check
+        run: ./node_modules/.bin/ts-unused-exports tsconfig.json
